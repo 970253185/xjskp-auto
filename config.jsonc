@@ -5,11 +5,17 @@
     // Tesseract OCR引擎的安装路径，用于文字识别
     "tesseract_path": "E:\\Tesseract-OCR\\tesseract.exe",
     
+    // 日志文件路径，支持日期格式化（%Y-%m-%d等）
+    "log_file_path": "D:\\Workspace\\logs\\auto_%Y-%m-%d.log",
+    
     // 技能选择界面的识别模板，用于检测是否进入技能选择界面
     "skill_template_paths": ["skill_template.png", "skill_template2.png"],
     
     // 开始游戏按钮的识别模板
     "start_button_templates": ["start.png"],
+    
+    // 开始按钮匹配阈值，默认为0.6
+    "start_button_threshold": 0.6,
     
     // 退出按钮的识别模板（多个模板提高识别率）
     "exit_button_templates": ["exit_btn.png", "exit_btn2.png"],
@@ -18,10 +24,10 @@
     "back_button_templates": ["back_btn.png", "back_btn2.png"],
     
     // 暂停按钮的识别模板
-    "pause_button_templates": ["pause.png"],
+    "pause_button_templates": ["pause.png", "pause2.png"],
     
     // 图像匹配的阈值，范围0-1，值越高匹配越严格
-    "match_threshold": 0.7,
+    "match_threshold": 0.6,
     
     // 图像匹配方法，可选值：
     // TM_CCOEFF, TM_CCOEFF_NORMED, TM_CCORR, TM_CCORR_NORMED, TM_SQDIFF, TM_SQDIFF_NORMED
@@ -34,10 +40,10 @@
     "max_wait_seconds": 600,
     
     // 目标等级，达到此等级后退出游戏
-    "target_level": 3,
+    "target_level": 2,
     
     // 循环次数，0表示无限循环
-    "loop_count": 2,
+    "loop_count": 1,
     
     // 优先级技能模式，按此顺序优先选择技能
     "priority_skill_patterns": ["连发", "齐射", "+1"],
@@ -152,10 +158,10 @@
     
     // 暂停按钮的默认位置比例（相对于窗口尺寸）
     "pause_button": {
-        // 水平位置比例（0-1），0.05表示窗口宽度的5%处
+        // 水平位置比例（0-1），0.05表示窗口宽度的5%处（左上角）
         "default_x_ratio": 0.05,
         
-        // 垂直位置比例（0-1），0.05表示窗口高度的5%处
+        // 垂直位置比例（0-1），0.05表示窗口高度的5%处（左上角）
         "default_y_ratio": 0.05
     },
     

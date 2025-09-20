@@ -7,8 +7,12 @@ import numpy as np
 import pygetwindow as gw
 import pyautogui
 import pytesseract
+import logging
+from logging.handlers import RotatingFileHandler
 from mss import mss
 from PIL import Image
+import sys
+import ctypes
 
 # 全局配置变量
 config = None
@@ -16,23 +20,83 @@ config = None
 # 全局调试模式标志
 DEBUG_MODE = False
 
+# 检查管理员权限
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+# 如果不是管理员，请求提升权限
+if not is_admin():
+    # 重新以管理员权限运行脚本
+    ctypes.windll.shell32.ShellExecuteW(
+        None, "runas", sys.executable, " ".join(sys.argv), None, 1
+    )
+    sys.exit(0)
+
+# 设置日志
+def setup_logging(log_file_path):
+    """设置日志记录，同时输出到控制台和文件"""
+    # 创建日志目录（如果不存在）
+    log_dir = os.path.dirname(log_file_path)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    
+    # 格式化当前日期
+    from datetime import datetime
+    formatted_path = datetime.now().strftime(log_file_path)
+    
+    # 创建日志记录器
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG if DEBUG_MODE else logging.INFO)
+    
+    # 清除现有的处理器
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    
+    # 创建文件处理器
+    file_handler = RotatingFileHandler(
+        formatted_path, 
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=5,
+        encoding='utf-8'
+    )
+    file_handler.setLevel(logging.DEBUG if DEBUG_MODE else logging.INFO)
+    
+    # 创建控制台处理器
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG if DEBUG_MODE else logging.INFO)
+    
+    # 创建格式化器
+    formatter = logging.Formatter(
+        '[%(asctime)s] [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # 设置格式化器
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+    
+    # 添加处理器到记录器
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    
+    return formatted_path
+
 # 日志输出函数
 def print_info(message):
     """打印信息日志"""
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] [INFO] {message}")
+    logging.info(message)
 
 def print_error(message):
     """打印错误日志"""
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] [ERROR] {message}")
+    logging.error(message)
 
 def print_debug(message):
     """打印调试日志（只在调试模式下显示）"""
     if DEBUG_MODE:
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{timestamp}] [DEBUG] {message}")
-        
+        logging.debug(message)
 
 def load_config(config_path):
     """加载并验证配置文件"""
@@ -394,6 +458,9 @@ def click_start_game_with_retry():
     max_attempts = config["retry_settings"]["start_game_max_attempts"]
     attempt = 0
     
+    # 使用开始按钮特定的阈值，如果配置中有的话
+    start_threshold = config.get("start_button_threshold", 0.6)  # 默认0.6
+    
     while attempt < max_attempts:
         attempt += 1
         print_info(f"\n===== 第{attempt}/{max_attempts}次尝试：寻找并点击「开始游戏」 =====")
@@ -419,11 +486,12 @@ def click_start_game_with_retry():
             time.sleep(config["sleep_times"]["retry_interval"])
             continue
 
-        # 尝试匹配开始按钮
+        # 尝试匹配开始按钮，使用开始按钮特定的阈值
         print_debug(f"开始按钮模板列表：{config['start_button_templates']}")
         match_result, match_pos, match_val, match_size = multi_template_match(
             screenshot, 
-            config["start_button_templates"]
+            config["start_button_templates"],
+            threshold=start_threshold  # 使用开始按钮特定的阈值
         )
         
         # 处理匹配结果
@@ -442,7 +510,7 @@ def click_start_game_with_retry():
                 if verify_start_game_success(window_info):
                     return window_info
         else:
-            print_info(f"未找到匹配的开始按钮（匹配阈值：{config['match_threshold']}），尝试默认位置")
+            print_info(f"未找到匹配的开始按钮（匹配阈值：{start_threshold}），尝试默认位置")
             # 点击默认位置
             x = int(window_info["width"] * config["start_button"]["default_x_ratio"])
             y = int(window_info["height"] * config["start_button"]["default_y_ratio"])
@@ -592,11 +660,13 @@ def select_priority_skill(window_info):
             print_error("技能选择后仍在技能界面，选择失败")
     
     return False
+
 def get_current_level(window_info):
-    """获取当前等级（简化实现，实际应通过计数实现）"""
+    """获取当前等级（简化实现）"""
     # 这个函数现在不需要实际实现，因为我们在complete_game_round中使用计数
     # 保留这个函数是为了避免其他地方调用时出错
     return 1  # 临时返回固定值
+
 def click_pause_button(window_info):
     """点击暂停按钮（使用pause.png识别）"""
     max_attempts = config["retry_settings"]["pause_button_max_attempts"]
@@ -606,6 +676,7 @@ def click_pause_button(window_info):
         
         screenshot = capture_screenshot(window_info)
         if screenshot is None:
+            print_error("截图失败，将重试")
             time.sleep(config["sleep_times"]["retry_interval"])
             continue
             
@@ -616,12 +687,26 @@ def click_pause_button(window_info):
         )
         
         if match_result and match_pos:
-            print_info(f"找到暂停按钮（匹配值：{match_val:.2f}）")
+            print_info(f"找到暂停按钮（匹配值：{match_val:.2f}，位置：{match_pos}）")
+            
+            # 计算点击位置（考虑校准偏移）
+            click_x = match_pos[0] + config["calibration"]["pause_x_offset"]
+            click_y = match_pos[1] + config["calibration"]["pause_y_offset"]
+            
+            # 确保点击位置在窗口范围内
+            if (click_x < 0 or click_x >= window_info["width"] or 
+                click_y < 0 or click_y >= window_info["height"]):
+                print_error(f"计算出的点击位置超出窗口范围: ({click_x}, {click_y})")
+                print_error(f"窗口尺寸: {window_info['width']}x{window_info['height']}")
+                # 使用默认位置
+                click_x = int(window_info["width"] * config["pause_button"]["default_x_ratio"])
+                click_y = int(window_info["height"] * config["pause_button"]["default_y_ratio"])
+                print_info(f"使用默认位置: ({click_x}, {click_y})")
+            
             click_success = click_position(
                 window_info,
-                match_pos[0], match_pos[1],
-                config["calibration"]["pause_x_offset"],
-                config["calibration"]["pause_y_offset"],
+                click_x, click_y,
+                0, 0,  # 已经在上面计算了偏移，这里不再添加
                 "暂停按钮（图片匹配）"
             )
             
@@ -629,7 +714,7 @@ def click_pause_button(window_info):
                 time.sleep(config["sleep_times"]["after_pause_click"])
                 return True
         else:
-            print_info(f"未找到匹配的暂停按钮，尝试默认位置")
+            print_info(f"未找到匹配的暂停按钮（最佳匹配值：{match_val:.2f}），尝试默认位置")
             # 点击默认位置
             x = int(window_info["width"] * config["pause_button"]["default_x_ratio"])
             y = int(window_info["height"] * config["pause_button"]["default_y_ratio"])
@@ -838,23 +923,24 @@ def complete_game_round(window_info, target_level):
         return False
         
     return True
+
 def main_loop():
     """主循环"""
     # 图片读取测试
     test_img_path = get_full_template_path("start.png")
-    print(f"\n===== 图片读取测试 =====")
-    print(f"测试路径：{test_img_path}")
-    print(f"路径是否存在：{os.path.exists(test_img_path)}")
+    print_info(f"\n===== 图片读取测试 =====")
+    print_info(f"测试路径：{test_img_path}")
+    print_info(f"路径是否存在：{os.path.exists(test_img_path)}")
     
     try:
         test_img = cv2.imread(test_img_path)
         if test_img is not None:
-            print(f"OpenCV读取成功！图片尺寸：{test_img.shape}")
+            print_info(f"OpenCV读取成功！图片尺寸：{test_img.shape}")
         else:
-            print(f"OpenCV读取失败！返回None（文件损坏或格式不支持）")
+            print_info(f"OpenCV读取失败！返回None（文件损坏或格式不支持）")
     except Exception as e:
-        print(f"OpenCV读取时出错：{e}")
-    print(f"========================\n")
+        print_info(f"OpenCV读取时出错：{e}")
+    print_info(f"========================\n")
     
     # 检查所有模板是否存在
     missing_templates = check_all_templates()
@@ -931,16 +1017,27 @@ def main():
     global DEBUG_MODE
     DEBUG_MODE = args.debug
     
-    print_info(f"开始执行游戏自动化脚本（模式：{args.play}，调试模式：{'开启' if args.debug else '关闭'}）")
-    
     # 加载配置文件
     load_config(args.config)
+    
+    # 设置日志
+    log_file_path = config.get("log_file_path", "auto_%Y-%m-%d.log")
+    actual_log_path = setup_logging(log_file_path)
+    print_info(f"日志文件：{actual_log_path}")
+    
+    print_info(f"开始执行游戏自动化脚本（模式：{args.play}，调试模式：{'开启' if args.debug else '关闭'}）")
     
     # 如果指定了Tesseract路径，覆盖配置文件
     if args.tesseract_path:
         config["tesseract_path"] = args.tesseract_path
     
     # 启动主循环
-    main_loop()
+    try:
+        main_loop()
+    except Exception as e:
+        print_error(f"脚本执行异常：{e}")
+        import traceback
+        print_error(traceback.format_exc())
+
 if __name__ == "__main__":
     main()
