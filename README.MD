@@ -128,7 +128,7 @@ python start.py --play master --config config.jsonc --tesseract-path "C:\Tessera
 
 - [ ] 实现真正的OCR等级识别
 - [ ] 添加更多游戏状态的检测
-- [ ] 支持多种游戏分辨率
+- [ ] 支持寰5
 - [ ] 添加图形化配置界面
 - [ ] 实现异常自动恢复功能
 
@@ -141,5 +141,6 @@ python start.py --play master --config config.jsonc --tesseract-path "C:\Tessera
 欢迎提交Issue和Pull Request来改进这个项目。
 
 ## 支持
+
 
 如果您在使用过程中遇到问题，请提交Issue或联系开发者。
