@@ -1,0 +1,191 @@
+{
+    // 模板文件根目录，存放所有用于图像识别的模板图片
+    "template_root": "D:\\Workspace\\xjskp-auto\\templates",
+    
+    // Tesseract OCR引擎的安装路径，用于文字识别
+    "tesseract_path": "E:\\Tesseract-OCR\\tesseract.exe",
+    
+    // 技能选择界面的识别模板，用于检测是否进入技能选择界面
+    "skill_template_paths": ["skill_template.png", "skill_template2.png"],
+    
+    // 开始游戏按钮的识别模板
+    "start_button_templates": ["start.png"],
+    
+    // 退出按钮的识别模板（多个模板提高识别率）
+    "exit_button_templates": ["exit_btn.png", "exit_btn2.png"],
+    
+    // 返回按钮的识别模板（多个模板提高识别率）
+    "back_button_templates": ["back_btn.png", "back_btn2.png"],
+    
+    // 暂停按钮的识别模板
+    "pause_button_templates": ["pause.png"],
+    
+    // 图像匹配的阈值，范围0-1，值越高匹配越严格
+    "match_threshold": 0.7,
+    
+    // 图像匹配方法，可选值：
+    // TM_CCOEFF, TM_CCOEFF_NORMED, TM_CCORR, TM_CCORR_NORMED, TM_SQDIFF, TM_SQDIFF_NORMED
+    "match_method": "TM_CCOEFF_NORMED",
+    
+    // 检查间隔（秒），用于轮询检测界面状态
+    "check_interval": 1.0,
+    
+    // 最大等待时间（秒），用于各种等待操作
+    "max_wait_seconds": 600,
+    
+    // 目标等级，达到此等级后退出游戏
+    "target_level": 3,
+    
+    // 循环次数，0表示无限循环
+    "loop_count": 2,
+    
+    // 优先级技能模式，按此顺序优先选择技能
+    "priority_skill_patterns": ["连发", "齐射", "+1"],
+    
+    // 各种操作的等待时间配置
+    "sleep_times": {
+        // 窗口激活后的等待时间（秒）
+        "window_activation": 1,
+        
+        // 点击开始游戏按钮后的等待时间（秒）
+        "after_start_game_click": 1.0,
+        
+        // 开始游戏验证的检查间隔（秒）
+        "start_verification_interval": 0.5,
+        
+        // 点击返回按钮后的等待时间（秒）
+        "after_back_button_click": 0.5,
+        
+        // 点击暂停按钮后的等待时间（秒）
+        "after_pause_button_click": 0.5,
+        
+        // 点击前的最小延迟（秒），用于模拟人类操作
+        "before_click_delay_min": 0.1,
+        
+        // 点击前的最大延迟（秒），用于模拟人类操作
+        "before_click_delay_max": 0.3,
+        
+        // 鼠标移动的最小持续时间（秒），用于模拟人类操作
+        "move_duration_min": 0.1,
+        
+        // 鼠标移动的最大持续时间（秒），用于模拟人类操作
+        "move_duration_max": 0.3,
+        
+        // 重试间隔（秒），用于各种重试操作
+        "retry_interval": 1.0,
+        
+        // 一轮游戏完成后的等待时间（秒）
+        "after_loop_finish": 2.0,
+        
+        // 选择技能后的等待时间（秒）
+        "after_skill_selection": 1.0,
+        
+        // 点击暂停按钮后的等待时间（秒）
+        "after_pause_click": 1.0,
+        
+        // 点击退出按钮后的等待时间（秒）
+        "after_exit_click": 1.0
+    },
+    
+    // 重试设置
+    "retry_settings": {
+        // 开始游戏按钮的最大尝试次数
+        "start_game_max_attempts": 5,
+        
+        // 开始游戏验证的最大检查次数
+        "start_verification_max_checks": 5,
+        
+        // 暂停按钮的最大尝试次数
+        "pause_button_max_attempts": 3,
+        
+        // 返回按钮的最大尝试次数
+        "back_button_max_attempts": 3,
+        
+        // 等级确认的检查次数
+        "level_confirmation_checks": 2
+    },
+    
+    // 坐标校准设置，用于微调点击位置
+    "calibration": {
+        // 开始按钮的水平偏移校准
+        "start_x": 0,
+        
+        // 开始按钮的垂直偏移校准
+        "start_y": 0,
+        
+        // 技能选择的水平偏移校准
+        "skill_x": 0,
+        
+        // 技能选择的垂直偏移校准
+        "skill_y": 0,
+        
+        // 返回按钮的水平偏移校准
+        "back_x": 0,
+        
+        // 返回按钮的垂直偏移校准
+        "back_y": 0,
+        
+        // 暂停按钮的水平偏移校准
+        "pause_x_offset": 0,
+        
+        // 暂停按钮的垂直偏移校准
+        "pause_y_offset": 0
+    },
+    
+    // 图像处理设置，用于提高识别率
+    "image_processing": {
+        // 对比度调整系数，1.0表示原始对比度
+        "contrast": 1.5,
+        
+        // 锐度调整系数，1.0表示原始锐度
+        "sharpness": 1.0,
+        
+        // 二值化阈值，-1表示不应用二值化
+        "threshold": -1,
+        
+        // 是否使用灰度图像进行处理
+        "use_gray": true,
+        
+        // 是否使用边缘检测进行处理
+        "use_edge": false
+    },
+    
+    // 暂停按钮的默认位置比例（相对于窗口尺寸）
+    "pause_button": {
+        // 水平位置比例（0-1），0.05表示窗口宽度的5%处
+        "default_x_ratio": 0.05,
+        
+        // 垂直位置比例（0-1），0.05表示窗口高度的5%处
+        "default_y_ratio": 0.05
+    },
+    
+    // 退出按钮的默认位置比例（相对于窗口尺寸）
+    "exit_button": {
+        // 水平位置比例（0-1），0.5表示窗口宽度的50%处（中间）
+        "default_x_ratio": 0.5,
+        
+        // 垂直位置比例（0-1），0.6表示窗口高度的60%处
+        "default_y_ratio": 0.6
+    },
+    
+    // 返回按钮的默认位置比例（相对于窗口尺寸）
+    "back_button": {
+        // 水平位置比例（0-1），0.5表示窗口宽度的50%处（中间）
+        "default_x_ratio": 0.5,
+        
+        // 垂直位置比例（0-1），0.7表示窗口高度的70%处
+        "default_y_ratio": 0.7
+    },
+    
+    // 开始按钮的默认位置比例（相对于窗口尺寸）
+    "start_button": {
+        // 水平位置比例（0-1），0.5表示窗口宽度的50%处（中间）
+        "default_x_ratio": 0.5,
+        
+        // 垂直位置比例（0-1），0.8表示窗口高度的80%处
+        "default_y_ratio": 0.8
+    },
+    
+    // 游戏窗口标题，用于查找和激活游戏窗口
+    "game_title": "向僵尸开炮"
+}
