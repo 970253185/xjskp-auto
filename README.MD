@@ -1,146 +1,158 @@
-# 游戏自动化脚本
+# 游戏自动化脚本（《向僵尸开炮》专用）
 
-这是一个用于自动化执行《向僵尸开炮》游戏的Python脚本，通过图像识别技术模拟玩家操作，实现自动开始游戏、选择技能、升级和退出游戏的功能。
+这是一个用于自动化执行《向僵尸开炮》游戏的 Python 脚本，通过图像识别技术模拟玩家操作，实现自动开始游戏、选择技能、升级和退出游戏的完整流程，同时支持普通模式与寰球模式。
 
-## 功能特点
 
-- 🎮 自动识别游戏窗口并激活
-- 🖱️ 基于模板匹配的按钮识别与点击
-- 🔍 多模板支持提高识别率
-- ⚡ 可配置的优先级技能选择
-- 📊 等级计数与目标达成检测
-- 🔧 丰富的配置选项和校准设置
-- 📝 详细的日志记录系统
+## ✨ 功能特点
+- 🎮 **智能窗口管理**：自动识别游戏窗口标题，支持模糊匹配，可自动恢复最小化窗口并激活至前台
+- 🖱️ **精准图像识别**：基于 OpenCV 模板匹配技术，支持多模板备份（提高不同场景下的识别率）
+- 🔧 **高度灵活配置**：通过 JSON5 配置文件可调整识别阈值、点击偏移、等待时间等所有核心参数，无需修改代码
+- 📊 **双模式支持**：同时支持普通模式（`master`）和寰球模式（`hq`），满足不同游戏场景需求
+- ⚡ **人性化操作模拟**：随机点击延迟、鼠标移动时长，避免被判定为机械操作
+- 📝 **详细日志系统**：日志同时输出至控制台与文件（按日期命名），包含操作轨迹、匹配值等关键信息，便于问题排查
+- 🔍 **多重容错机制**：关键操作（如点击开始/暂停/退出按钮）自带重试逻辑，支持模板匹配失败时 fallback 至默认位置点击
 
-## 技术栈
 
-- **图像识别**: OpenCV + 模板匹配
-- **文字识别**: Tesseract OCR (可选)
-- **屏幕捕获**: MSS
-- **窗口管理**: PyGetWindow
-- **鼠标控制**: PyAutoGUI
-- **配置管理**: JSON5
+## 🛠️ 技术栈
+| 功能模块       | 核心技术/库                          | 作用说明                                  |
+|----------------|--------------------------------------|-------------------------------------------|
+| 图像识别       | OpenCV + 模板匹配                    | 识别游戏按钮、界面状态（如技能选择界面）  |
+| 文字识别（可选）| Tesseract OCR                        | 识别技能名称、等级等文字信息              |
+| 屏幕捕获       | MSS                                  | 高效捕获游戏窗口区域截图（比 PIL 更流畅） |
+| 窗口管理       | PyGetWindow                          | 查找、激活、恢复游戏窗口                  |
+| 鼠标控制       | PyAutoGUI                            | 模拟鼠标移动、点击操作                    |
+| 配置管理       | JSON5                                | 支持注释的配置文件格式，便于维护          |
+| 日志记录       | Python logging + RotatingFileHandler | 按文件大小切割日志（10MB/个，保留5个备份）|
 
-## 安装依赖
 
-1. 安装Python 3.7+
-2. 安装所需库：
+## 📦 安装依赖
+### 1. 基础环境准备
+- 安装 Python 3.7 及以上版本（推荐 3.9/3.10，兼容性更优）
+  - 下载地址：[Python 官方网站](https://www.python.org/downloads/)
+  - 安装时需勾选「Add Python to PATH」，便于后续命令行调用
+
+### 2. 安装核心依赖库
+打开命令提示符（CMD）或终端，执行以下命令：
 ```bash
 pip install opencv-python pyautogui pygetwindow mss pytesseract json5 pillow
 ```
-3. 安装Tesseract OCR (可选，用于文字识别):
-   - Windows: 下载并安装 [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)
-   - 其他系统: 使用包管理器安装
 
-## 配置文件说明
+### 3. （可选）安装 Tesseract OCR（文字识别功能）
+若需要使用技能名称识别、等级识别等文字相关功能，需额外安装 Tesseract OCR：
+- **Windows 系统**：
+  1. 下载安装包：[Tesseract OCR 官方镜像](https://github.com/UB-Mannheim/tesseract/wiki)（选择最新版的 `tesseract-ocr-w64-setup-xxx.exe`）
+  2. 安装时需记住安装路径（如 `E:\Tesseract-OCR`），需在配置文件中指定该路径
+- **macOS/Linux 系统**：
+  - macOS：`brew install tesseract`
+  - Linux（Ubuntu/Debian）：`sudo apt-get install tesseract-ocr`
 
-配置文件(`config.jsonc`)包含所有可调整的参数，主要分为以下几类：
 
-### 路径配置
-- `template_root`: 模板图片存储目录
-- `tesseract_path`: Tesseract OCR引擎路径
+## ⚙️ 配置文件说明（`config.jsonc`）
+配置文件是脚本的核心控制文件，支持注释（JSON5 格式特性），所有参数均可根据游戏实际界面调整。核心配置项分类如下：
 
-### 模板配置
-- `skill_template_paths`: 技能界面识别模板
-- `start_button_templates`: 开始按钮识别模板
-- `exit_button_templates`: 退出按钮识别模板
-- `back_button_templates`: 返回按钮识别模板
-- `pause_button_templates`: 暂停按钮识别模板
+| 配置分类       | 关键参数                          | 作用说明                                                                 |
+|----------------|-----------------------------------|--------------------------------------------------------------------------|
+| 路径配置       | `template_root`、`tesseract_path` | 模板图片存放目录、Tesseract OCR 安装路径                                 |
+| 识别模板       | `start_button_templates`、`skill_template_paths` 等 | 各按钮/界面的识别模板列表（多模板可提高识别率）                          |
+| 游戏目标       | `target_level`、`loop_count`      | 每轮游戏目标等级（达到后退出）、总循环次数（0 表示无限循环）              |
+| 识别参数       | `match_threshold`、`match_method` | 匹配阈值（0-1，值越高越严格）、匹配算法（默认 `TM_CCOEFF_NORMED` 即可）   |
+| 时间控制       | `sleep_times` 下所有子项          | 窗口激活、点击后等待、重试间隔等时间（单位：秒），需根据游戏卡顿情况调整 |
+| 坐标校准       | `calibration` 下所有子项          | 按钮点击位置偏移量（如 `start_x` 调整开始按钮水平偏移）                  |
+| 图像处理       | `image_processing` 下所有子项     | 截图预处理参数（如灰度化、对比度调整，提高识别率）                       |
+| 按钮默认位置   | `start_button`、`pause_button` 等 | 模板匹配失败时的 fallback 点击位置（按窗口宽高比例计算）                  |
+| 寰球模式专属   | `hq_xxx_templates` 所有子项       | 寰球模式下邀请、开始游戏等界面的识别模板                                 |
+| 窗口识别       | `game_title`                      | 游戏窗口标题（需与实际窗口标题一致，支持模糊匹配）                       |
 
-### 游戏设置
-- `target_level`: 目标等级
-- `loop_count`: 循环次数(0表示无限循环)
-- `priority_skill_patterns`: 优先级技能列表
+> 详细配置注释可参考单独提供的 `config.jsonc` 注释文件，所有参数均有中文说明。
 
-### 识别参数
-- `match_threshold`: 图像匹配阈值(0-1)
-- `match_method`: 图像匹配算法
-- `image_processing`: 图像预处理设置
 
-### 时间控制
-- `check_interval`: 检查间隔(秒)
-- `max_wait_seconds`: 最大等待时间(秒)
-- `sleep_times`: 各种操作的等待时间配置
+## 📸 模板图片准备
+脚本依赖模板图片进行图像识别，需提前截取游戏内关键元素并保存至 `template_root` 目录（默认：`D:\Workspace\xjskp-auto\templates`），需准备的模板如下：
 
-### 坐标校准
-- `calibration`: 各种按钮的点击位置校准
-- 按钮默认位置比例设置
+| 模板文件名          | 对应游戏元素                  | 截图要求                                                                 |
+|---------------------|-------------------------------|--------------------------------------------------------------------------|
+| `start.png`         | 开始游戏按钮                  | 截取完整按钮区域，避免多余背景，建议尺寸不小于 50×50 像素                |
+| `pause.png`/`pause2.png` | 游戏内暂停按钮              | 通常在窗口角落，需截取按钮正常状态（非点击时）                           |
+| `skill_template.png`/`skill_template2.png` | 技能选择界面特征 | 截取技能选择界面独有的元素（如标题栏、边框），而非单个技能按钮            |
+| `exit_btn.png`/`exit_btn2.png` | 暂停菜单中的退出按钮      | 截取退出按钮完整区域，需包含按钮文字或独特图标                           |
+| `back_btn.png`/`back_btn2.png` | 确认对话框中的返回按钮    | 同上，确保按钮特征清晰                                                   |
+| 寰球模式专属模板    | `invite.png`、`hq_start.png` 等 | 分别截取寰球模式下的「邀请」「开始游戏」等按钮，需与普通模式模板区分      |
 
-## 使用方法
+> 提示：若游戏界面更新导致识别失败，只需重新截取对应模板图片替换即可，无需修改代码。
 
-### 基本使用
+
+## 🚀 使用方法
+### 基础命令格式
 ```bash
+python start.py --play [运行模式] --config [配置文件路径] [可选参数]
+```
+
+### 1. 普通模式（默认核心模式）
+```bash
+# 基础使用（使用默认 config.jsonc 配置）
 python start.py --play master --config config.jsonc
-```
 
-### 启用调试模式
-```bash
+# 启用调试模式（输出详细匹配值、窗口信息等日志）
 python start.py --play master --config config.jsonc --debug
+
+# 手动指定 Tesseract 路径（覆盖配置文件中的设置）
+python start.py --play master --config config.jsonc --tesseract-path "E:\Tesseract-OCR\tesseract.exe"
 ```
 
-### 指定Tesseract路径
+### 2. 寰球模式
 ```bash
-python start.py --play master --config config.jsonc --tesseract-path "C:\Tesseract-OCR\tesseract.exe"
+# 基础使用
+python start.py --play hq --config config.jsonc
+
+# 启用调试模式
+python start.py --play hq --config config.jsonc --debug
 ```
 
-## 模板图片准备
 
-1. 创建模板目录(如`D:\Workspace\xjskp-auto\templates`)
-2. 截取游戏中的各种界面元素并保存为PNG格式：
-   - 开始按钮(`start.png`)
-   - 技能界面(`skill_template.png`, `skill_template2.png`)
-   - 暂停按钮(`pause.png`)
-   - 退出按钮(`exit_btn.png`, `exit_btn2.png`)
-   - 返回按钮(`back_btn.png`, `back_btn2.png`)
+## 🔍 常见问题排查
+### 1. 窗口无法激活/找不到窗口
+- 检查 `config.jsonc` 中 `game_title` 是否与游戏窗口标题一致（可通过「任务管理器 → 详细信息 → 窗口标题」查看）
+- 确保游戏以「窗口模式」运行（全屏模式无法捕获截图和点击）
+- 若提示「权限不足」，需以管理员身份运行命令提示符（右键 CMD → 以管理员身份运行）
 
-## 自定义配置
+### 2. 识别率低（按钮找不到/误判）
+- 重新截取模板图片：确保图片清晰、无模糊，按钮区域完整，背景简单
+- 降低 `match_threshold`：如从 0.8 调整为 0.6（需避免过低导致误判）
+- 调整 `image_processing` 参数：开启 `use_gray`（灰度化）、提高 `contrast`（对比度，如 1.5→2.0）
+- 增加模板数量：如为退出按钮添加 `exit_btn3.png`，并加入 `exit_button_templates` 列表
 
-根据实际游戏情况，您可能需要调整以下配置：
+### 3. 点击位置不准确
+- 调整 `calibration` 对应参数：如点击开始按钮偏左，可增大 `start_x`（如从 0 调整为 10）
+- 修正按钮默认位置：如 `start_button` 下 `default_x_ratio`（水平比例）、`default_y_ratio`（垂直比例）
+- 检查模板图片中心：确保模板图片的中心与实际按钮中心一致（可通过画图工具查看像素坐标）
 
-1. **匹配阈值**: 如果识别率低，降低`match_threshold`(如0.6)；如果误识别多，提高阈值(如0.8)
-2. **坐标校准**: 如果点击位置不准确，调整`calibration`中的偏移值
-3. **等待时间**: 根据游戏响应速度调整`sleep_times`中的各种等待时间
-4. **默认位置**: 如果界面布局变化，调整按钮的默认位置比例
-
-## 常见问题
-
-### 窗口无法激活
-- 确保游戏窗口标题与配置中的`game_title`匹配
-- 检查游戏是否以窗口模式运行
-
-### 识别率低
-- 使用更清晰的模板图片
-- 调整图像处理参数(对比度、阈值等)
-- 降低匹配阈值
-
-### 点击位置不准确
-- 调整相应按钮的校准偏移值
-- 修改默认位置比例
-
-## 注意事项
-
-1. 本脚本仅供学习和研究使用，请勿用于商业用途
-2. 使用前请确保了解游戏的使用条款
-3. 建议在测试环境中先验证脚本功能
-4. 长时间运行可能会对游戏账号产生影响，请谨慎使用
-
-## 开发计划
-
-- [ ] 实现真正的OCR等级识别
-- [ ] 添加更多游戏状态的检测
-- [ ] 支持寰5
-- [ ] 添加图形化配置界面
-- [ ] 实现异常自动恢复功能
-
-## 许可证
-
-本项目采用MIT许可证，详情请参阅LICENSE文件。
-
-## 贡献
-
-欢迎提交Issue和Pull Request来改进这个项目。
-
-## 支持
+### 4. Tesseract 识别失败
+- 确认 `tesseract_path` 路径正确（需指向 `tesseract.exe`）
+- 安装 Tesseract 时需勾选「添加语言包」（默认包含英文，中文需额外安装）
+- 调整 `image_processing` 参数：提高对比度、开启二值化（`threshold` 设为 127 左右）
 
 
-如果您在使用过程中遇到问题，请提交Issue或联系开发者。
+## ⚠️ 注意事项
+1. 本脚本仅供 **学习和研究使用**，请勿用于商业用途或违反游戏用户协议的行为
+2. 长时间运行可能导致游戏账号风险（如被判定为外挂），建议每运行 1-2 小时暂停 10 分钟
+3. 首次使用前需在测试环境验证：先设置 `loop_count=1`、`target_level=2` 测试流程完整性
+4. 游戏更新后可能导致界面变化，需重新截取模板图片并调整配置参数
+5. 运行时请勿操作鼠标/键盘（脚本会模拟鼠标点击，手动操作可能干扰流程）
+
+
+## 📋 开发计划
+- [ ] 实现基于 OCR 的实时等级识别（替代当前计数逻辑）
+- [ ] 添加图形化配置界面（无需手动修改 JSON 文件）
+- [ ] 支持更多游戏场景异常恢复（如游戏崩溃自动重启）
+- [ ] 优化寰球模式组队逻辑（支持自动接受邀请、踢人等）
+- [ ] 增加手机模拟器适配（当前仅支持 PC 端游戏窗口）
+
+
+## 📄 许可证
+本项目采用 **MIT 许可证**，允许个人和非商业用途自由使用、修改和分发，详情请参阅项目根目录下的 `LICENSE` 文件。
+
+
+## 🤝 贡献与支持
+- 若发现 Bug 或有功能建议，可提交 Issue 至项目仓库
+- 欢迎提交 Pull Request 改进代码（需遵循现有代码风格，添加必要日志）
+- 使用中遇到问题，可查看日志文件（默认：`D:\Workspace\logs\auto_YYYY-MM-DD.log`）或联系开发者
