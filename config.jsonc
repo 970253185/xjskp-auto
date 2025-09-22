@@ -4,13 +4,13 @@
     // =========================================================================
 
     // [必需] 模板文件根目录，存放所有用于图像识别的模板图片 (如 start.png, pause.png)
-    "template_root": "D:\\Workspace\\xjskp-auto\\templates",
+    "template_root": "./templates",
 
     // [必需] Tesseract OCR引擎的安装路径，用于文字识别（如技能名称）
-    "tesseract_path": "E:\\Tesseract-OCR\\tesseract.exe",
+    "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
 
     // [可选] 日志文件保存路径，支持日期格式化（例如 %Y-%m-%d 会生成每日日志）
-    "log_file_path": "D:\\Workspace\\logs\\auto_%Y-%m-%d.log",
+    "log_file_path": "./logs/auto_%Y-%m-%d.log",
 
     // =========================================================================
     // =                       核心识别模板配置                               =
@@ -197,4 +197,5 @@
     // [必需] 游戏窗口的标题。脚本通过这个标题来查找和激活游戏窗口。
     // 请确保与游戏窗口的实际标题完全一致（可以使用窗口Spy工具查看）。
     "game_title": "向僵尸开炮"
+
 }
